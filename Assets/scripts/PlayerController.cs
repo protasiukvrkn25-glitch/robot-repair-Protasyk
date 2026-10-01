@@ -5,18 +5,23 @@ public class PlayerController : MonoBehaviour
 {
     public InputAction MoveAction;
 
+    private Rigidbody2D rb;
+    private Vector2 move;
+
     void Start()
     {
+        rb = GetComponent<Rigidbody2D>();
         MoveAction.Enable();
     }
 
     void Update()
     {
-        Vector2 move = MoveAction.ReadValue<Vector2>();
+        move = MoveAction.ReadValue<Vector2>();
+    }
 
-        Vector2 position = transform.position;
-        position += move * 5f * Time.deltaTime;
-
-        transform.position = position;
+    void FixedUpdate()
+    {
+        Vector2 newPosition = rb.position + move * 5f * Time.fixedDeltaTime;
+        rb.MovePosition(newPosition);
     }
 }
