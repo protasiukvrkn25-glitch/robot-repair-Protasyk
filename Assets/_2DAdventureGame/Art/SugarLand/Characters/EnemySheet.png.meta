@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: cfd6f82ef4dc6d74ab5d4a8971d25eee
+guid: c989cff50a74f2c41b0b9793f2cf44ef
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -565,10 +565,3 @@ TextureImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 271239
-  packageName: 'Unity Learn | 2D Adventure Game: Robot Repair'
-  packageVersion: 2.0.0
-  assetPath: Assets/_2DAdventureGame/Art/SugarLand/Characters/EnemySheet.png
-  uploadId: 832758
