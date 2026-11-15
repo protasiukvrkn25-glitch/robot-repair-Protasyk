@@ -5,6 +5,7 @@ public class PlayerController : MonoBehaviour
 {
     public InputAction MoveAction;
     public InputAction LaunchAction; // Поле для дії стрільби
+    public InputAction TalkAction = new InputAction("Talk", InputActionType.Button, "<Keyboard>/x");
 
     public GameObject projectilePrefab; // Поле для префаба снаряда
 
@@ -23,19 +24,27 @@ public class PlayerController : MonoBehaviour
     public float timeInvincible = 2.0f;
     bool isInvincible;
     float damageCooldown;
+    NonPlayerCharacter lastNonPlayerCharacter;
+    bool isDead;
 
     void Start()
     {
         MoveAction.Enable();
         LaunchAction.Enable(); // Вмикаємо дію стрільби
+        TalkAction.Enable();
 
         rigidbody2d = GetComponent<Rigidbody2D>();
         currentHealth = maxHealth;
         animator = GetComponent<Animator>();
+
+        UIHandler uiHandler = UIHandler.instance;
+        if (uiHandler == null) uiHandler = FindFirstObjectByType<UIHandler>();
+        if (uiHandler != null) uiHandler.SetHealthValue(1.0f);
     }
 
     void Update()
     {
+        if (isDead) return;
         move = MoveAction.ReadValue<Vector2>();
 
         if (!Mathf.Approximately(move.x, 0.0f) || !Mathf.Approximately(move.y, 0.0f))
@@ -65,10 +74,36 @@ public class PlayerController : MonoBehaviour
         {
             Launch();
         }
+
+        NonPlayerCharacter targetNPC = null;
+        RaycastHit2D[] hits = Physics2D.RaycastAll(
+            rigidbody2d.position + Vector2.up * 0.2f, moveDirection, 1.5f);
+        foreach (RaycastHit2D hit in hits)
+        {
+            if (hit.collider.attachedRigidbody == rigidbody2d) continue;
+            targetNPC = hit.collider.GetComponent<NonPlayerCharacter>();
+            if (targetNPC != null) break;
+            if (!hit.collider.isTrigger) break;
+        }
+        if (targetNPC != null)
+        {
+            if (lastNonPlayerCharacter != null && lastNonPlayerCharacter != targetNPC)
+                lastNonPlayerCharacter.SetBubbleVisible(false);
+            targetNPC.SetBubbleVisible(true);
+            lastNonPlayerCharacter = targetNPC;
+            if (TalkAction.WasPressedThisFrame() && UIHandler.instance != null)
+                UIHandler.instance.DisplayDialogue();
+        }
+        else if (lastNonPlayerCharacter != null)
+        {
+            lastNonPlayerCharacter.SetBubbleVisible(false);
+            lastNonPlayerCharacter = null;
+        }
     }
 
     void FixedUpdate()
     {
+        if (isDead) return;
         Vector2 position = (Vector2)rigidbody2d.position + move * speed * Time.fixedDeltaTime;
         rigidbody2d.MovePosition(position);
     }
@@ -109,6 +144,7 @@ public class PlayerController : MonoBehaviour
 
     public void ChangeHealth(int amount)
     {
+        if (isDead) return;
         if (amount < 0)
         {
             if (isInvincible)
@@ -124,7 +160,58 @@ public class PlayerController : MonoBehaviour
             }
         }
 
+        int previousHealth = currentHealth;
         currentHealth = Mathf.Clamp(currentHealth + amount, 0, maxHealth);
-        Debug.Log(currentHealth + "/" + maxHealth);
+        if (currentHealth != previousHealth)
+        {
+            if (amount < 0)
+            {
+                GameAudioFeedback.PlayPlayerHit(transform.position);
+                SpriteFlashFeedback flash = GetComponent<SpriteFlashFeedback>();
+                if (flash == null) flash = gameObject.AddComponent<SpriteFlashFeedback>();
+                flash.Play(new Color(1f, 0.83f, 0.28f));
+            }
+            else
+            {
+                GameAudioFeedback.PlayPickup(transform.position);
+                SpriteFlashFeedback flash = GetComponent<SpriteFlashFeedback>();
+                if (flash == null) flash = gameObject.AddComponent<SpriteFlashFeedback>();
+                flash.Play(new Color(0.35f, 0.95f, 0.78f));
+            }
+        }
+        Debug.Log($"Здоров'я робота: {currentHealth}/{maxHealth}");
+
+        UIHandler uiHandler = UIHandler.instance;
+        if (uiHandler == null) uiHandler = FindFirstObjectByType<UIHandler>();
+        if (uiHandler != null)
+        {
+            uiHandler.SetHealthValue(currentHealth / (float)maxHealth);
+            if (currentHealth == 0) uiHandler.DisplayLoseScreen();
+        }
+
+        if (currentHealth == 0) Die();
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        EnemyController enemy = other.GetComponent<EnemyController>();
+        if (enemy != null && enemy.isBroken) ChangeHealth(-1);
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        EnemyController enemy = collision.collider.GetComponent<EnemyController>();
+        if (enemy != null && enemy.isBroken) ChangeHealth(-1);
+    }
+
+    public void Die()
+    {
+        if (isDead) return;
+        isDead = true;
+        move = Vector2.zero;
+        MoveAction.Disable();
+        LaunchAction.Disable();
+        TalkAction.Disable();
+        if (rigidbody2d != null) rigidbody2d.linearVelocity = Vector2.zero;
     }
 }

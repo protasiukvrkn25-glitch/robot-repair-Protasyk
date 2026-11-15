@@ -3,39 +3,46 @@ using UnityEngine.UIElements;
 
 public class MainMenuController : MonoBehaviour
 {
-    private UIDocument _uiDocument;
-    private Button _startButton;
+    private Button startButton;
 
     private void Start()
     {
-        // Ставимо гру на паузу одразу після завантаження сцени
         Time.timeScale = 0f;
-
-        _uiDocument = GetComponent<UIDocument>();
-        _startButton = _uiDocument.rootVisualElement.Q<Button>("start-button");
-
-        if (_startButton != null)
-        {
-            _startButton.clicked += OnStartButtonClicked;
-        }
+        RegisterStartButtonOnAllDocuments();
     }
 
     private void OnDisable()
     {
-        if (_startButton != null)
+        if (startButton != null) startButton.clicked -= OnStartButtonClicked;
+    }
+
+    private void RegisterStartButtonOnAllDocuments()
+    {
+        UIDocument[] documents = FindObjectsByType<UIDocument>(FindObjectsSortMode.None);
+        foreach (UIDocument document in documents)
         {
-            _startButton.clicked -= OnStartButtonClicked;
+            if (document == null) continue;
+            Button button = document.rootVisualElement.Q<Button>("start-button");
+            if (button == null) continue;
+            button.clicked -= OnStartButtonClicked;
+            button.clicked += OnStartButtonClicked;
+            if (startButton == null) startButton = button;
         }
     }
 
     private void OnStartButtonClicked()
     {
         Debug.Log("Кнопку натиснуто! Запускаємо гру...");
-
-        // Запускаємо час у грі
         Time.timeScale = 1f;
 
-        // Ховаємо лише кнопку (решта елементів GameUI залишається на екрані)
-        _startButton.style.display = DisplayStyle.None;
+        UIDocument[] documents = FindObjectsByType<UIDocument>(FindObjectsSortMode.None);
+        foreach (UIDocument document in documents)
+        {
+            if (document == null) continue;
+            Button button = document.rootVisualElement.Q<Button>("start-button");
+            if (button != null) button.style.display = DisplayStyle.None;
+            VisualElement startOverlay = document.rootVisualElement.Q<VisualElement>("StartScreenOverlay");
+            if (startOverlay != null) startOverlay.style.display = DisplayStyle.None;
+        }
     }
 }

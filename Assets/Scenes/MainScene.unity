@@ -1072,6 +1072,8 @@ GameObject:
   - component: {fileID: 410520888}
   - component: {fileID: 410520887}
   - component: {fileID: 410520886}
+  - component: {fileID: 410520889}
+  - component: {fileID: 410520890}
   m_Layer: 5
   m_Name: UIDocument
   m_TagString: Untagged
@@ -7602,6 +7604,33 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 567280042}
   m_SourcePrefab: {fileID: 100100000, guid: ca0e2b334ba44a845aa5540544483c97, type: 3}
+--- !u!114 &410520889
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 410520885}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c71a78a5fda4b9496b5f928187fd24a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIHandler
+  displayTime: 4
+--- !u!114 &410520890
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 410520885}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d503f4ad2c64499dba072c68d06105b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameManager
+  player: {fileID: 0}
+  uiHandler: {fileID: 410520889}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

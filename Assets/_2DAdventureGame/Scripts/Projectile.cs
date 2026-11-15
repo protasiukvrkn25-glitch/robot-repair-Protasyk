@@ -2,39 +2,86 @@ using UnityEngine;
 
 public class Projectile : MonoBehaviour
 {
-    Rigidbody2D rigidbody2d;
+    private Rigidbody2D body2D;
+    private PlayerController targetPlayer;
+    private Vector2 previousPosition;
+    private bool hasHit;
 
-    void Awake()
+    public bool damagesPlayer;
+    public int damage = 1;
+
+    private void Awake()
     {
-        rigidbody2d = GetComponent<Rigidbody2D>();
+        body2D = GetComponent<Rigidbody2D>();
+        previousPosition = transform.position;
     }
 
-    void Update()
+    private void Update()
     {
-    
-        if (transform.position.magnitude > 100.0f)
+        if (damagesPlayer && targetPlayer != null && !hasHit)
         {
-            Destroy(gameObject);
+            Vector2 currentPosition = transform.position;
+            Vector2 segment = currentPosition - previousPosition;
+            float lengthSquared = segment.sqrMagnitude;
+            float t = lengthSquared > 0f
+                ? Mathf.Clamp01(Vector2.Dot((Vector2)targetPlayer.transform.position - previousPosition, segment) / lengthSquared)
+                : 0f;
+            Vector2 closestPoint = previousPosition + t * segment;
+            if (((Vector2)targetPlayer.transform.position - closestPoint).sqrMagnitude <= 0.8f * 0.8f)
+            {
+                HitTarget(targetPlayer.gameObject);
+                return;
+            }
+            previousPosition = currentPosition;
         }
+
+        if (transform.position.magnitude > 100f)
+            Destroy(gameObject);
+    }
+
+    public void SetTarget(PlayerController player)
+    {
+        targetPlayer = player;
     }
 
     public void Launch(Vector2 direction, float force)
     {
-        rigidbody2d.AddForce(direction * force);
+        if (body2D != null)
+            body2D.AddForce(direction * force);
     }
 
-    void OnTriggerEnter2D(Collider2D other)
+    public void LaunchAtSpeed(Vector2 direction, float speed)
     {
-        EnemyController enemy = other.GetComponent<EnemyController>();
-        if (enemy != null)
+        previousPosition = transform.position;
+        if (body2D != null)
+            body2D.linearVelocity = direction.normalized * speed;
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        HitTarget(other.gameObject);
+    }
+
+    private void HitTarget(GameObject other)
+    {
+        if (hasHit) return;
+
+        if (damagesPlayer)
         {
-            enemy.Fix();
+            PlayerController player = other.GetComponentInParent<PlayerController>();
+            if (player != null) player.ChangeHealth(-Mathf.Abs(damage));
+        }
+        else
+        {
+            EnemyController enemy = other.GetComponentInParent<EnemyController>();
+            if (enemy != null) enemy.TakeDamage(Mathf.Abs(damage));
         }
 
+        hasHit = true;
         Destroy(gameObject);
     }
 
-    void OnCollisionEnter2D(Collision2D other)
+    private void OnCollisionEnter2D(Collision2D other)
     {
         Destroy(gameObject);
     }
